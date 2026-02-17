@@ -10,6 +10,8 @@ const navItems = [
   { title: 'Messages', icon: MessageCircle, path: '/messages', badge: 3 },
   { title: 'My Profile', icon: User, path: '/profile' },
   { title: 'Settings', icon: Settings, path: '/settings' },
+  { title: 'Counselor Dashboard', icon: LayoutDashboard, path: '/counselor' },
+  { title: 'Admin Dashboard', icon: LayoutDashboard, path: '/admin' },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
