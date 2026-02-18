@@ -1,7 +1,41 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import { User, Mail, Phone, Shield, Camera, Save } from 'lucide-react';
+import { jwtDecode } from 'jwt-decode';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function Profile() {
+  const [user, setUser] = useState<any>(null);
+const baseUrl = 'https://jaliconnect-backend.onrender.com';
+  useEffect(() => {
+  const fetchUser = async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+
+    try {
+      const decoded = jwtDecode<any>(token);
+      const userId = decoded.userInfo.user_id;
+
+      const res = await axios.get(`${baseUrl}/api/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setUser(res.data);
+      console.log("Fetched user:", res.data);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+    }
+  };
+
+  fetchUser();
+}, []);
+
+
+  useEffect(() => {
+  console.log("Updated user:", user);
+}, [user]);
+
+
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto space-y-8">
@@ -32,14 +66,14 @@ export default function Profile() {
               <label className="text-sm font-medium text-muted-foreground mb-1.5 block">Username</label>
               <div className="relative">
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input defaultValue="anon_user_2847" className="w-full pl-10 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:ring-2 focus:ring-primary transition-all" />
+                <input value={user?.username || "anon_user_2847"} className="w-full pl-10 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:ring-2 focus:ring-primary transition-all" />
               </div>
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-1.5 block">Email</label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input defaultValue="user@example.com" className="w-full pl-10 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:ring-2 focus:ring-primary transition-all" />
+                <input value={user?.email || "user@example.com"} className="w-full pl-10 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:ring-2 focus:ring-primary transition-all" />
               </div>
             </div>
             <div>
@@ -51,7 +85,7 @@ export default function Profile() {
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-1.5 block">Age Range</label>
-              <select className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:ring-2 focus:ring-primary transition-all appearance-none">
+              <select value={user?.age_group || ""} className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm focus:ring-2 focus:ring-primary transition-all appearance-none">
                 <option>13-17</option>
                 <option>18-24</option>
                 <option>25-30</option>

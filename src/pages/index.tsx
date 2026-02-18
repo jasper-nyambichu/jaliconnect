@@ -31,7 +31,7 @@ import Footer from "@/components/Footer";
 const HeroSection = () => (
   <section className="relative min-h-[85vh] flex items-center justify-center pt-20 overflow-hidden">
     <div className="absolute inset-0">
-      <img src={heroFilmPoster} alt="" className="w-full h-full object-cover" />
+      <img src={heroFilmPoster} alt="" className="w-full h-full object-cover object-center md:object-top" />
       <div className="absolute inset-0 bg-gradient-dark-overlay" />
     </div>
 

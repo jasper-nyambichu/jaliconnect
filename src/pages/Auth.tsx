@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User, Phone, AlertCircle, CheckCircle, Shield, ArrowRight, Heart } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import logo from '@/assets/ChatGPT_Image_Feb_15__2026__09_08_45_AM-removebg-preview.png';
+import axios from 'axios';
+import { toast } from '@/hooks/use-toast';
+import { jwtDecode } from 'jwt-decode';
+import { useAuth } from '@/context/AuthContext';
 
 export default function AuthPage() {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -12,9 +17,21 @@ export default function AuthPage() {
   const [passwordMatch, setPasswordMatch] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const { login } = useAuth();
   const [passwordStrength, setPasswordStrength] = useState({
     hasMinLength: false, hasUpperCase: false, hasLowerCase: false, hasNumber: false, hasSpecialChar: false,
   });
+  const [message, setMessage] = useState('');
+  useEffect(() =>{
+    if(message || localError){
+      const timer = setTimeout(() => {
+        setMessage('');
+        setLocalError('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  },[message, localError])
+  const baseUrl = 'https://jaliconnect-backend.onrender.com'; // Update with your backend URL
   const [formData, setFormData] = useState({
     email: '', password: '', confirmPassword: '', firstName: '', lastName: '', phone: '', username: '',
   });
@@ -51,13 +68,40 @@ export default function AuthPage() {
       if (formData.password !== formData.confirmPassword) { setLocalError('Passwords do not match'); setPasswordMatch(false); setIsSubmitting(false); return; }
       if (!agreedToTerms) { setLocalError('Please agree to the Terms & Conditions'); setIsSubmitting(false); return; }
     }
-    if (!formData.email.trim()) { setLocalError('Email is required'); setIsSubmitting(false); return; }
+    if (isLogin) {
+      if (!formData.username.trim()) { setLocalError('Username is required'); setIsSubmitting(false); return; }
+    } else {
+      if (!formData.email.trim()) { setLocalError('Email is required'); setIsSubmitting(false); return; }
+    }
     if (!formData.password) { setLocalError('Password is required'); setIsSubmitting(false); return; }
 
     try {
-      console.log('Auth submit:', { isLogin, ...formData });
+      if(!isLogin){
+         console.log('Auth submit:', { isLogin, username: formData.username, email: formData.email });
+         const response = await axios.post(`${baseUrl}/api/users`, formData);
+         const successMessage = response.data?.message || (isLogin ? 'Logged in successfully!' : 'Account created successfully!');
+         setMessage(successMessage);
+         toast({ title: isLogin ? 'Success' : 'Account created', description: successMessage, variant: 'default' });
+      }
+     
+      if (isLogin) {
+        await login(formData.username, formData.password);
+        setMessage('Logged in successfully!');
+        
+      }
+
+      
+      // console.log('Response:', response.data?.message);
+      //clear form
+      setFormData({ email: '', password: '', confirmPassword: '', firstName: '', lastName: '', phone: '', username: '' });
+      if(!isLogin){
+        setIsLogin(true);
+      }
     } catch (error: any) {
-      setLocalError(error.message || 'Something went wrong');
+      const errMsg = error.response?.data?.error || error?.response?.data?.message || 'Something went wrong';
+      setLocalError(errMsg);
+      toast({ title: 'Error', description: errMsg, variant: 'destructive' });
+      console.log('Error response:', error.response?.data)
     } finally {
       setIsSubmitting(false);
     }
@@ -124,9 +168,9 @@ export default function AuthPage() {
             </h1>
             <p className="text-muted-foreground">
               {isLogin ? (
-                <>Don't have an account? <button onClick={() => { setIsLogin(false); setLocalError(''); }} className="text-primary hover:underline font-semibold">Sign Up</button></>
+                <>Don't have an account? <button onClick={() => { setIsLogin(false); setLocalError(''); setMessage(''); }} className="text-primary hover:underline font-semibold">Sign Up</button></>
               ) : (
-                <>Already have an account? <button onClick={() => { setIsLogin(true); setLocalError(''); }} className="text-primary hover:underline font-semibold">Sign In</button></>
+                <>Already have an account? <button onClick={() => { setIsLogin(true); setLocalError(''); setMessage('') }} className="text-primary hover:underline font-semibold">Sign In</button></>
               )}
             </p>
           </div>
@@ -145,7 +189,7 @@ export default function AuthPage() {
 
           <div className="flex items-center gap-4 mb-6">
             <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground font-medium uppercase">Or continue with email</span>
+            <span className="text-xs text-muted-foreground font-medium uppercase">{isLogin ? 'Or continue with username' : 'Or continue with email'}</span>
             <div className="flex-1 h-px bg-border" />
           </div>
 
@@ -175,8 +219,17 @@ export default function AuthPage() {
             </AnimatePresence>
 
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input type="email" placeholder="Email Address" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className={inputClasses} required disabled={isSubmitting} />
+              {isLogin ? (
+                <>
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input type="text" placeholder="Username" value={formData.username} onChange={e => setFormData({ ...formData, username: e.target.value })} className={inputClasses} required disabled={isSubmitting} />
+                </>
+              ) : (
+                <>
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input type="email" placeholder="Email Address" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className={inputClasses} required disabled={isSubmitting} />
+                </>
+              )}
             </div>
 
             <div className="relative">
