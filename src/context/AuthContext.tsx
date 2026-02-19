@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import  axios  from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 
@@ -9,7 +9,7 @@ interface User {
   id: string;
   email: string;
   username: string;
-  // add other fields as returned by your backend
+  // add other fields as returned by y our backend
 }
 
 interface AuthContextType {
